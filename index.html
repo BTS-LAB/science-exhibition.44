@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Medical QR Card</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Base Styles & Input Mode Color Scheme: Blue and Black Gradient */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        /* Card Container */
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+
+        h2, h3 {
+            text-align: center;
+            margin-top: 0;
+            letter-spacing: 1px;
+        }
+
+        label {
+            display: block;
+            margin: 12px 0 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        option {
+            background: #111827;
+            color: white;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        /* Scanned/Result Card Color Scheme: Black and Red Gradient */
+        body.scanned-mode {
+            background: linear-gradient(135deg, #000000, #7f1d1d);
+        }
+
+        body.scanned-mode button {
+            background: #dc2626;
+        }
+        body.scanned-mode button:hover {
+            background: #b91c1c;
+        }
+
+        /* QR Display Area */
+        #qr-section, #card-view {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #qrcode {
+            display: inline-block;
+            margin: 20px 0;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .emergency-badge {
+            background: #dc2626;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .info-display {
+            text-align: left;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .hospital-list {
+            max-height: 180px;
+            overflow-y: auto;
+            text-align: left;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div id="form-view">
+        <h2>Medical Info Creator</h2>
+        <p style="text-align: center; font-size: 13px; color: #93c5fd;">Fill in details to generate your Emergency QR Code</p>
+        
+        <label>Full Name:</label>
+        <input type="text" id="name" placeholder="e.g. Rahul Sharma">
+
+        <label>Age:</label>
+        <input type="number" id="age" placeholder="e.g. 25">
+
+        <label>Blood Group:</label>
+        <select id="blood-group">
+            <option value="Unknown">Select Blood Group</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+        </select>
+
+        <label>Emergency Contact Number:</label>
+        <input type="tel" id="phone" placeholder="e.g. +91 98765 43210">
+
+        <label>Allergies / Conditions:</label>
+        <input type="text" id="allergy" placeholder="e.g. Peanut Allergy, Diabetes, Asthma">
+
+        <label>Condition / Symptom Info:</label>
+        <textarea id="symptom-info" rows="3" placeholder="Type custom symptoms, medications, or critical notes here..."></textarea>
+
+        <button onclick="generateQRCode()">MAKE QR CODE</button>
+        
+        <div id="qr-section">
+            <h3>Your QR Code is Ready!</h3>
+            <div id="qrcode"></div>
+            <p style="font-size: 12px; color: #a1a1aa;">Screenshot or print this QR code. When scanned, it opens this card.</p>
+            <button onclick="simulateScan()" style="background: #4b5563;">Simulate Scan (Test Card)</button>
+        </div>
+    </div>
+
+    <div id="card-view">
+        <div class="emergency-badge">EMERGENCY MEDICAL CARD</div>
+        
+        <label for="lang-select">Choose Language / भाषा चुनें:</label>
+        <select id="lang-select" onchange="changeLanguage()" style="background: #111827; color: #f3f4f6;">
+            <option value="en">English</option>
+            <option value="mr">Marathi (मराठी)</option>
+            <option value="hi">Hindi (हिंदी)</option>
+            <option value="gu">Gujarati (ગુજરાતી)</option>
+            <option value="ta">Tamil (தமிழ்)</option>
+            <option value="bn">Bengali (বাংলা)</option>
+            <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+            <option value="as">Assamese (অসমীয়া)</option>
+            <option value="ml">Malayalam (മലയാളം)</option>
+            <option value="ur">Urdu (اردو)</option>
+        </select>
+
+        <div class="info-display">
+            <p><strong><span class="lbl-name">Name</span>:</strong> <span id="view-name" class="translatable"></span></p>
+            <p><strong><span class="lbl-age">Age</span>:</strong> <span id="view-age"></span></p>
+            <p><strong><span class="lbl-blood">Blood Group</span>:</strong> <span id="view-blood"></span></p>
+            <p><strong><span class="lbl-phone">Emergency Contact</span>:</strong> <span id="view-phone"></span></p>
+            <p><strong><span class="lbl-allergy">Medical Condition</span>:</strong> <span id="view-allergy" class="translatable"></span></p>
+            <p><strong><span class="lbl-info">Important Information</span>:</strong> <span id="view-info" class="translatable"></span></p>
+        </div>
+
+        <div class="emergency-badge" id="amb-display" style="background: #000; border: 2px solid #dc2626; animation: none;">
+            🚑 <span class="lbl-amb">AMBULANCE</span>: <span id="amb-numbers">102 / 108</span>
+        </div>
+
+        <label class="lbl-search">Search Nearest City/Suburb Hospital:</label>
+        <input type="text" id="search-city" placeholder="e.g. Juhu, Lokhandwala, Bandra, Delhi, Noida..." oninput="searchHospitals()">
+        <div class="hospital-list" id="hospital-results">
+            Type a location to find nearby hospitals...
+        </div>
+
+        <button onclick="window.location.reload()" style="margin-top:20px; background:#4b5563;">Create New Card</button>
+    </div>
+
+</div>
+
+<script>
+    let originalData = { name: "", allergy: "", info: "", age: "", phone: "" };
+
+    // Expanded Database across explicit cities, suburbs, and surrounding zones
+    const hospitalDatabase = [
+        // --- MUMBAI & SUBURBS ---
+        { city: "mumbai", suburb: "juhu", name: "Arogya Nidhi Hospital, Juhu" },
+        { city: "mumbai", suburb: "juhu", name: "Cooper Hospital, Vile Parle / Juhu" },
+        { city: "mumbai", suburb: "lokhandwala", name: "Kokilaben Dhirubhai Ambani Hospital, Andheri West" },
+        { city: "mumbai", suburb: "andheri", name: "SevenHills Hospital, Andheri East" },
+        { city: "mumbai", suburb: "andheri", name: "Criticare Asia Multispecialty Hospital, Andheri" },
+        { city: "mumbai", suburb: "dn nagar", name: "Kokilaben Hospital Extension Clinic, DN Nagar" },
+        { city: "mumbai", suburb: "marol", name: "SevenHills Medical Center, Marol" },
+        { city: "mumbai", suburb: "bandra", name: "Lilavati Hospital & Research Centre, Bandra West" },
+        { city: "mumbai", suburb: "bandra", name: "Bhabha Hospital, Bandra" },
+        { city: "mumbai", suburb: "parel", name: "KEM Hospital & Tata Memorial, Parel" },
+        { city: "mumbai", suburb: "borivali", name: "Apex Hospitals, Borivali West" },
+        { city: "mumbai", suburb: "ghatkopar", name: "Hiranandani Hospital, Powai / Ghatkopar" },
+        { city: "mumbai", suburb: "malad", name: "Zenith Multispeciality Hospital, Malad" },
+
+        // --- PUNE & SUBURBS ---
+        { city: "pune", suburb: "lokhandwala", name: "Lifepoint Multispecialty Hospital, Pune Suburbs" },
+        { city: "pune", suburb: "shivajinagar", name: "Sancheti Hospital, Shivajinagar" },
+        { city: "pune", suburb: "hinjewadi", name: "Ruby Hall Clinic, Hinjewadi" },
+        { city: "pune", suburb: "kothrud", name: "Sahyadri Super Speciality Hospital, Kothrud" },
+        { city: "pune", suburb: "hadapsar", name: "Noble Hospital, Hadapsar" },
+        { city: "pune", suburb: "viman nagar", name: "Jehangir Hospital Outpost, Viman Nagar" },
+
+        // --- DELHI & NCR ---
+        { city: "delhi", suburb: "connaught place", name: "Ram Manohar Lohia (RML) Hospital, Central Delhi" },
+        { city: "delhi", suburb: "saket", name: "Max Super Speciality Hospital, Saket" },
+        { city: "delhi", suburb: "dwarka", name: "Manipal Hospital, Dwarka" },
+        { city: "delhi", suburb: "rohini", name: "Bhagwati Hospital, Rohini" },
+        { city: "delhi", suburb: "noida", name: "Fortis Hospital, Sector 62, Noida" },
+        { city: "delhi", suburb: "gurugram", name: "Medanta - The Medicity, Gurugram" },
+
+        // --- BENGALURU ---
+        { city: "bengaluru", suburb: "indiranagar", name: "Manipal Hospital, Hal Road" },
+        { city: "bengaluru", suburb: "whitefield", name: "Vaidehi Institute of Medical Sciences" },
+        { city: "bengaluru", suburb: "jayanagar", name: "Apollo Speciality Hospital, Jayanagar" },
+        { city: "bengaluru", suburb: "electronic city", name: "Narayana Health City, Electronic City" },
+
+        // --- AHMEDABAD & SURAT ---
+        { city: "ahmedabad", suburb: "asarwa", name: "Civil Hospital, Asarwa" },
+        { city: "ahmedabad", suburb: "satellite", name: "Shalby Hospitals, Satellite" },
+        { city: "ahmedabad", suburb: "navrangpura", name: "HCG Hospitals, Navrangpura" },
+        { city: "surat", suburb: "adajan", name: "SMIMER Hospital & Medical College" },
+        { city: "surat", suburb: "majura gate", name: "New Civil Hospital, Surat" },
+        { city: "surat", suburb: "varachha", name: "Kiran Super Speciality Hospital, Varachha" },
+
+        // --- REGIONAL HUBS (RAIGAD, AMRITSAR, DHARAMSHALA, JALANDHAR, JAIPUR, VARANASI, PATNA, NAGPUR, GOA) ---
+        { city: "raigad", suburb: "alibag", name: "Raigad District Civil Hospital, Alibag" },
+        { city: "raigad", suburb: "panvel", name: "MGM Hospital, Panvel Regional Zone" },
+        { city: "amritsar", suburb: "ranjit avenue", name: "Amandeep Hospital, Ranjit Avenue" },
+        { city: "amritsar", suburb: "circular road", name: "Sri Guru Ram Das Charitable Hospital" },
+        { city: "dharamshala", suburb: "kotwali bazar", name: "Zonal Hospital, Dharamshala" },
+        { city: "dharamshala", suburb: "kangra", name: "Dr. Rajendra Prasad Government Medical College" },
+        { city: "jalandhar", suburb: "model town", name: "SGL Charitable Hospital, Jalandhar Suburbs" },
+        { city: "jalandhar", suburb: "gt road", name: "Civil Hospital, Jalandhar" },
+        { city: "jaipur", suburb: "malviya nagar", name: "Apex Super Speciality Hospital, Malviya Nagar" },
+        { city: "jaipur", suburb: "tonk road", name: "Sawai Man Singh (SMS) Hospital" },
+        { city: "varanasi", suburb: "lanka", name: "Sir Sunderlal Hospital (BHU), Lanka" },
+        { city: "varanasi", suburb: "cantt", name: "Heritage Hospitals, Varanasi" },
+        { city: "patna", suburb: "kankarbagh", name: "Patna Medical College Hospital (PMCH) Suburb Branch" },
+        { city: "patna", suburb: "bailey road", name: "Paras HMRI Hospital, Patna" },
+        { city: "nagpur", suburb: "sitabuldi", name: "Care Hospitals, Sitabuldi" },
+        { city: "nagpur", suburb: "dhantoli", name: "Government Medical College & Hospital (GMCH) Suburbs" },
+        { city: "goa", suburb: "panaji", name: "Goa Medical College & Hospital (GMC), Bambolim" },
+        { city: "goa", suburb: "margao", name: "Hospicio District Hospital, Margao" },
+        
+        // --- CHENNAI & KOLKATA & HYDERABAD ---
+        { city: "chennai", suburb: "greams road", name: "Apollo Hospitals, Greams Road" },
+        { city: "chennai", suburb: "adyar", name: "Fortis Malar Hospital, Adyar" },
+        { city: "kolkata", suburb: "salt lake", name: "AMRI Hospitals, Salt Lake" },
+        { city: "kolkata", suburb: "alipore", name: "Woodlands Multispecialty Hospital" },
+        { city: "hyderabad", suburb: "banjara hills", name: "Care Hospitals, Banjara Hills" },
+        { city: "hyderabad", suburb: "hitech city", name: "Medicover Hospitals, Hitech City" }
+    ];
+
+    const translations = {
+        en: { name: "Name", age: "Age", blood: "Blood Group", phone: "Emergency Contact", allergy: "Medical Condition", info: "Important Information", amb: "AMBULANCE", search: "Search Nearest City/Suburb Hospital:" },
+        mr: { name: "नाव", age: "वय", blood: "रक्त गट", phone: "आणीबाणीचा संपर्क", allergy: "वैद्यकीय स्थिती", info: "महत्वाची माहिती", amb: "रुग्णवाहिका", search: "जवळचे शहर/उपनगर रुग्णालय शोधा:" },
+        hi: { name: "नाम", age: "उम्र", blood: "रक्त समूह", phone: "आपातकालीन संपर्क", allergy: "चिकित्सा स्थिति", info: "महत्वपूर्ण जानकारी", amb: "एम्बुलेंस", search: "निकटतम शहर/उपनगर अस्पताल खोजें:" },
+        gu: { name: "નામ", age: "ઉંમર", blood: "બ્લડ ગ્રુપ", phone: "ઇમરજન્સી સંપર્ક", allergy: "તબીબી સ્થિતિ", info: "મહત્વપૂર્ણ માહિતી", amb: "એમ્બ્યુલન્સ", search: "નજીકની સિટી/ઉપનગર હોસ્પિટલ શોધો:" },
+        ta: { name: "பெயர்", age: "வயது", blood: "இரத்த வகை", phone: "அவசர தொடர்பு", allergy: "மருத்துவ நிலை", info: "முக்கியமான தகவல்", amb: "ஆம்புலன்ஸ்", search: "அருகிலுள்ள நகரம்/புறநகர் மருத்துவமனையைத் தேடுங்கள்:" },
+        bn: { name: "নাম", age: "বয়স", blood: "রক্তের গ্রুপ", phone: "জরুরী যোগাযোগ", allergy: "চিকিৎসা অবস্থা", info: "গুরুত্বपूर्ण তথ্য", amb: "অ্যাম্বুলেন্স", search: "নিকটবর্তী শহর/শহরতলি হাসপাতাল খুঁজুন:" },
+        pa: { name: "ਨਾਮ", age: "ਉਮਰ", blood: "ਬਲੱਡ ਗਰੁੱਪ", phone: "ਐਮਰਜੈਂਸੀ ਸੰਪਰਕ", allergy: "ਮੈਡੀਕਲ ਸਥਿਤੀ", info: "ਮਹੱਤਵਪੂਰਨ ਜਾਣਕਾਰੀ", amb: "ਐਂਬੂਲੈਂਸ", search: "ਨਜ਼ਦੀਕੀ ਸ਼ਹਿਰ/ਉਪਨਗਰ ਹਸਪਤਾਲ ਦੀ ਖੋਜ ਕਰੋ:" },
+        as: { name: "নাম", age: "বয়স", blood: "ৰক্ত গোট", phone: "জৰুৰীকালীন যোগাযোগ", allergy: "চিকিৎসাৰ অৱস্থা", info: "গুৰুত্বপূৰ্ণ তথ্য", amb: "এম্বুলেন্স", search: "নিকটৱৰ্তী চহৰ/শহৰতলি চিকিৎসালয় সন্ধান কৰক:" },
+        ml: { name: "പേര്", age: "വയസ്സ്", blood: "രക്തഗ്രൂപ്പ്", phone: "അടിയന്തിര ബന്ധം", allergy: "രോഗാവസ്ഥ", info: "പ്രധാന വിവരങ്ങൾ", amb: "ആംബുലൻസ്", search: "അടുത്തുള്ള നഗരം/ഉപനഗര ആശുപത്രി തിരയുക:" },
+        ur: { name: "نام", age: "عمر", blood: "بلڈ گروپ", phone: "ایمرجنسی رابطہ", allergy: "طبی حالت", info: "اہم معلومات", amb: "ایمبولینس", search: "قریبی شہر یا مضافاتی ہسپتال تلاش کریں:" }
+    };
+
+    const numMaps = {
+        en: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        mr: ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"],
+        hi: ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"],
+        gu: ["૦", "૧", "૨", "૩", "૪", "૫", "૬", "૭", "૮", "૯"],
+        ta: ["௦", "௧", "௨", "௩", "௪", "௫", "௬", "௭", "௮", "௯"],
+        bn: ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"],
+        pa: ["੦", "੧", "੨", "੩", "੪", "੫", "੬", "੭", "੮", "੯"],
+        as: ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"],
+        ml: ["൦", "൧", "൨", "൩", "൪", "൫", "൬", "൭", "൮", "൯"],
+        ur: ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+    };
+
+    function translateNumbers(str, targetLang) {
+        if (!str || !numMaps[targetLang]) return str;
+        return str.toString().split('').map(char => {
+            const index = numMaps['en'].indexOf(char);
+            return index !== -1 ? numMaps[targetLang][index] : char;
+        }).join('');
+    }
+
+    let generatedUrl = "";
+    function generateQRCode() {
+        const name = encodeURIComponent(document.getElementById('name').value || "Not Provided");
+        const age = encodeURIComponent(document.getElementById('age').value || "N/A");
+        const blood = encodeURIComponent(document.getElementById('blood-group').value || "Unknown");
+        const phone = encodeURIComponent(document.getElementById('phone').value || "N/A");
+        const allergy = encodeURIComponent(document.getElementById('allergy').value || "None Specified");
+        const info = encodeURIComponent(document.getElementById('symptom-info').value || "None Provided");
+
+        const baseUrl = window.location.href.split('?')[0];
+        generatedUrl = `${baseUrl}?name=${name}&age=${age}&blood=${blood}&phone=${phone}&allergy=${allergy}&info=${info}`;
+
+        document.getElementById("qrcode").innerHTML = "";
+        
+        new QRCode(document.getElementById("qrcode"), {
+            text: generatedUrl,
+            width: 200,
+            height: 200,
+            correctLevel: QRCode.CorrectLevel.L,
+            typeNumber: 0
+        });
+
+        document.getElementById('qr-section').style.display = 'block';
+    }
+
+    function simulateScan() {
+        if(generatedUrl) {
+            window.location.href = generatedUrl;
+        }
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('name')) {
+            document.body.classList.add('scanned-mode');
+            document.getElementById('form-view').style.display = 'none';
+            document.getElementById('card-view').style.display = 'block';
+
+            originalData.name = decodeURIComponent(urlParams.get('name'));
+            originalData.age = decodeURIComponent(urlParams.get('age'));
+            originalData.phone = decodeURIComponent(urlParams.get('phone'));
+            originalData.allergy = decodeURIComponent(urlParams.get('allergy'));
+            originalData.info = decodeURIComponent(urlParams.get('info'));
+            originalData.blood = decodeURIComponent(urlParams.get('blood') || "Unknown");
+
+            document.getElementById('view-name').innerText = originalData.name;
+            document.getElementById('view-age').innerText = originalData.age;
+            document.getElementById('view-blood').innerText = originalData.blood;
+            document.getElementById('view-phone').innerText = originalData.phone;
+            document.getElementById('view-allergy').innerText = originalData.allergy;
+            document.getElementById('view-info').innerText = originalData.info;
+            
+            searchHospitals();
+        }
+    }
+
+    async function translateText(text, targetLang) {
+        if (!text || text === "None Provided" || text === "None Specified" || text === "Not Provided" || text === "N/A" || text === "Unknown") return text;
+        if (targetLang === 'en') return text;
+        
+        try {
+            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+            const data = await res.json();
+            return data[0].map(item => item[0]).join('');
+        } catch (error) {
+            console.error("Translation missing or timed out:", error);
+            return text;
+        }
+    }
+
+    async function changeLanguage() {
+        const lang = document.getElementById('lang-select').value;
+        const textLabels = translations[lang];
+
+        document.querySelector('.lbl-name').innerText = textLabels.name;
+        document.querySelector('.lbl-age').innerText = textLabels.age;
+        document.querySelector('.lbl-blood').innerText = textLabels.blood;
+        document.querySelector('.lbl-phone').innerText = textLabels.phone;
+        document.querySelector('.lbl-allergy').innerText = textLabels.allergy;
+        document.querySelector('.lbl-info').innerText = textLabels.info;
+        document.querySelector('.lbl-amb').innerText = textLabels.amb;
+        document.querySelector('.lbl-search').innerText = textLabels.search;
+
+        document.getElementById('view-age').innerText = translateNumbers(originalData.age, lang);
+        document.getElementById('view-phone').innerText = translateNumbers(originalData.phone, lang);
+        document.getElementById('amb-numbers').innerText = translateNumbers("102 / 108", lang);
+
+        document.getElementById('view-name').innerText = await translateText(originalData.name, lang);
+        document.getElementById('view-allergy').innerText = await translateText(originalData.allergy, lang);
+        document.getElementById('view-info').innerText = await translateText(originalData.info, lang);
+    }
+
+    function searchHospitals() {
+        const query = document.getElementById('search-city').value.toLowerCase().trim();
+        const resultsDiv = document.getElementById('hospital-results');
+        
+        if(query === "") {
+            resultsDiv.innerHTML = "<strong>Main Emergency Facilities:</strong><br>• Cooper Hospital, Juhu<br>• Max Hospital, Delhi<br>• Kokilaben Hospital, Lokhandwala<br>• Medanta, Gurugram";
+            return;
+        }
+
+        let filtered = hospitalDatabase.filter(h => 
+            h.city.includes(query) || h.suburb.includes(query)
+        );
+
+        if(filtered.length > 0) {
+            resultsDiv.innerHTML = filtered.map(h => `• ${h.name} (${h.city.toUpperCase()})`).join('<br>');
+        } else {
+            resultsDiv.innerHTML = "No explicit hospital cached for this suburb. Please call 102/108 immediately or check Maps.";
+        }
+    }
+</script>
+</body>
+</html>
